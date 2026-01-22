@@ -11,7 +11,9 @@ Solução **simples e reprodutível** para classificação textual via API HTTP,
   - `POST /classify`
 - Classificador **por regras** (heurísticas) para 3 classes:
   - `pergunta`, `relato`, `reclamacao`
-- `Dockerfile`, `docker-compose.yml` e `Makefile` para execução e testes reprodutíveis
+- Empacotamento e automação de execução com:
+  - `Dockerfile` + `docker-compose.yml`
+  - `Makefile` (opcional, em ambientes que possuem `make`)
 - Testes automatizados com `pytest`
 
 ## Arquitetura e pipeline (visão rápida)
@@ -34,19 +36,21 @@ e focam no controle do pipeline.
 
 ## Como executar (recomendado: Docker)
 
-Subir o serviço:
+### Subir o serviço
 
 ```bash
-make up
+docker compose up --build
 ```
 
-Em outro terminal, validar saúde:
+> O serviço sobe em `http://localhost:8000`.
+
+### Validar saúde (em outro terminal)
 
 ```bash
 curl -fsS http://localhost:8000/health
 ```
 
-Classificar:
+### Classificar (exemplo)
 
 ```bash
 curl -fsS -X POST http://localhost:8000/classify \
@@ -54,16 +58,34 @@ curl -fsS -X POST http://localhost:8000/classify \
   -d '{"text":"Como faço para autenticar?"}'
 ```
 
-Rodar um smoke test (exemplos):
+### Smoke test (exemplos)
+
+**Linux/macOS (bash):**
 
 ```bash
 ./scripts/smoke.sh
 ```
 
-Derrubar o ambiente:
+**Windows PowerShell (sem bash):**
+
+```powershell
+curl -Method POST "http://localhost:8000/classify" `
+  -Headers @{ "Content-Type"="application/json" } `
+  -Body '{"text":"Como faço para autenticar?"}'
+
+curl -Method POST "http://localhost:8000/classify" `
+  -Headers @{ "Content-Type"="application/json" } `
+  -Body '{"text":"Não funciona, deu erro no sistema."}'
+
+curl -Method POST "http://localhost:8000/classify" `
+  -Headers @{ "Content-Type"="application/json" } `
+  -Body '{"text":"Hoje registrei uma ocorrência no sistema."}'
+```
+
+### Derrubar o ambiente
 
 ```bash
-make down
+docker compose down -v
 ```
 
 ## Como testar
@@ -71,8 +93,15 @@ make down
 ### Testes dentro do Docker (mais reprodutível)
 
 ```bash
-make test-docker
+docker build -t mini-text-service:test .
+docker run --rm mini-text-service:test pytest -q
 ```
+
+> Alternativa equivalente (mais robusta para path/imports), se necessário:
+>
+> ```bash
+> docker run --rm mini-text-service:test python -m pytest -q
+> ```
 
 ### Testes localmente (sem Docker)
 
@@ -82,6 +111,16 @@ python -m venv .venv
 # .venv\Scripts\activate  # Windows PowerShell
 pip install -r requirements.txt
 pytest -q
+```
+
+## (Opcional) Atalhos via Makefile
+
+Em ambientes com `make` instalado:
+
+```bash
+make up
+make down
+make test-docker
 ```
 
 ## Decisões DevOps/MLOps (curtas)

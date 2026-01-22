@@ -1,22 +1,22 @@
 from __future__ import annotations
 
 import time
-from typing import Literal, Optional, Tuple
+from typing import Optional, Tuple
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
-
 
 app = FastAPI(title="Mini Text Service", version="1.0.0")
 
 
 class ClassifyRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=2000)
+    # string para evitar 422 e permitir retornarmos 400 "unsupported strategy"
     strategy: Optional[str] = "rules"
 
 
 class ClassifyResponse(BaseModel):
-    category: Literal["pergunta", "relato", "reclamacao"]
+    category: str  # "pergunta" | "relato" | "reclamacao"
     confidence: float
     strategy: str
     elapsed_ms: int
@@ -38,14 +38,12 @@ def info():
 
 @app.post("/echo")
 def echo(payload: dict):
-    # Útil para testar requests/response e debug de rede
     return {"received": payload}
 
 
 def classify_rules(text: str) -> Tuple[str, float]:
     t = text.strip().lower()
 
-    # Heurísticas simples (não é um modelo)
     if "?" in t or t.startswith(("como ", "por que ", "pq ", "qual ", "quais ")):
         return "pergunta", 0.85
 
