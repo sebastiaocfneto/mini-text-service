@@ -1,0 +1,7 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    # For a simple exercise, restart policy helps demo stability without extra infra.
+    restart: unless-stopped
